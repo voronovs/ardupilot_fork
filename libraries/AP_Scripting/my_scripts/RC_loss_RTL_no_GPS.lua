@@ -264,7 +264,7 @@ function update () -- periodic function that will be called
   end
 
   -- flight_stage 0: wait for good gps and dist-from-home
-  curr_alt_below_home = ahrs:get_relative_position_D_home()
+  curr_alt_below_home = -ahrs:get_relative_position_D_home()
   if (flight_stage == 0) then
     -- wait for altitude from home to pass DR_ENABLE_ALT
     if ((curr_alt_below_home > 50) and (curr_alt_below_home >= enable_alt:get())) then
@@ -274,6 +274,7 @@ function update () -- periodic function that will be called
       gcs:send_text(5, "DR: waiting for alt:" .. tostring(math.floor(curr_alt_below_home)) .. " need:" .. tostring(math.floor(enable_alt:get())))
     end
     return update, interval_ms
+
   end
 
   -- flight_stage 1: wait for RC loss
