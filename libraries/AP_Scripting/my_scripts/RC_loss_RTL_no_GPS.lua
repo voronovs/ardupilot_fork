@@ -61,7 +61,7 @@
 
 -- create and initialise parameters
 local PARAM_TABLE_KEY = 86  -- parameter table key must be used by only one script on a particular flight controller
-assert(param:add_table(PARAM_TABLE_KEY, "DR_", 9), 'could not add param table')
+assert(param:add_table(PARAM_TABLE_KEY, "DR_", 10), 'could not add param table')
 assert(param:add_param(PARAM_TABLE_KEY, 1, 'ENABLE', 1), 'could not add DR_ENABLE param')   -- 1 = enabled, 0 = disabled
 assert(param:add_param(PARAM_TABLE_KEY, 2, 'ENABLE_DIST', 50), 'could not add DR_ENABLE_DIST param')   -- distance from home (in meters) beyond which the dead reckoning will be enabled
 assert(param:add_param(PARAM_TABLE_KEY, 3, 'GPS_SACC_MAX', 0.8), 'could not add DR_GPS_SACC_MAX param') -- GPS speed accuracy max threshold
@@ -237,7 +237,7 @@ function update () -- periodic function that will be called
   end
 
   -- check RC failsafe
-  local rc_ekf = -rc:has_valid_input()
+  local rc_ekf = not rc:has_valid_input()
   if rc_bad ~= rc_ekf then
     rc_bad = rc_ekf
     gcs:send_text(0, "DR: RC bad")
