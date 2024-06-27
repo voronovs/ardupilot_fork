@@ -197,7 +197,7 @@ end
 
 local copter_guided_nogps_mode = 20 -- Guided_NoGPS is mode 20 on Copter
 local copter_RTL_mode = 6           -- RTL is mode 6 on Copter
-local recovery_delay_ms = 3000      -- switch to NEXT_MODE happens this many milliseconds after GPS and EKF failsafe recover
+local recovery_delay_ms = 3000      -- switch to NEXT_MODE happens this many milliseconds after RC and other failsafes recover
 
 local gps_bad = false               -- true if GPS is failing checks
 local ekf_bad = false               -- true if EKF failsafe has triggered
@@ -205,9 +205,10 @@ local gps_or_ekf_bad = true         -- true if GPS and/or EKF is bad, true once 
 local rc_bad = false                -- true if RC is failing checks
 local rc_or_something_bad = true    -- true if RC and/or something is bad, true once both have recovered
 
-local flight_stage = 0  -- 0. wait for good-gps and dist-from-home, 1=wait for bad gps or ekf, 2=level vehicle, 3=deadreckon home
+local flight_stage = 0  -- 0. wait for good RC, 1=wait for bad RC or something, 2=level vehicle, 3=deadreckon home
 local gps_bad_start_time_ms = 0 -- system time GPS quality went bad (0 if not bad)
-local recovery_start_time_ms = 0-- system time GPS quality and EKF failsafe recovered (0 if not recovered)
+local rc_bad_start_time_ms = 0 -- system time RC quality went bad (0 if not bad)
+local recovery_start_time_ms = 0-- system time RC quality and other failsafes recovered (0 if not recovered)
 
 local home_dist = 0     -- distance to home in meters
 local home_yaw = 0      -- direction to home in degrees
