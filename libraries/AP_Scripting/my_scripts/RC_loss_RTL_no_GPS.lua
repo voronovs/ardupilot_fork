@@ -71,7 +71,7 @@ assert(param:add_param(PARAM_TABLE_KEY, 5, 'GPS_TRIGG_SEC', 3), 'could not add D
 assert(param:add_param(PARAM_TABLE_KEY, 6, 'FLY_ANGLE', 15), 'could not add DR_FLY_ANGLE param')    -- lean angle (in degrees) during deadreckoning
 assert(param:add_param(PARAM_TABLE_KEY, 7, 'FLY_ALT_MIN', 80), 'could not add DR_FLY_ALT_MIN param') -- min alt above home (in meters) during deadreckoning. zero to return at current alt
 assert(param:add_param(PARAM_TABLE_KEY, 8, 'FLY_TIMEOUT', 30), 'could not add DR_FLY_TIMEOUT param')-- deadreckoning timeout (in seconds)
-assert(param:add_param(PARAM_TABLE_KEY, 9, 'NEXT_MODE', 2), 'could not add DR_NEXT_MODE param')     -- mode to switch to after GPS recovers or timeout elapses
+assert(param:add_param(PARAM_TABLE_KEY, 9, 'NEXT_MODE', 6), 'could not add DR_NEXT_MODE param')     -- mode to switch to after GPS recovers or timeout elapses
 assert(param:add_param(PARAM_TABLE_KEY, 10, 'ENABLE_ALT', 50), 'could not add DR_ENABLE_ALT param')   -- altitude from home (in meters) beyond which the dead reckoning will be enabled
 
 -- bind parameters to variables
