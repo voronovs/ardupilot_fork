@@ -223,16 +223,15 @@ local stage3_start_time_ms  -- system time stage3 started (deadreckon home)
 local last_print_ms = 0     -- pilot update timer
 local interval_ms = 100     -- update at 10hz
 
--- This script is an example of printed updated ahrs
-
 function update () -- periodic function that will be called
+
   -- exit immediately if not enabled
   if (enable:get() < 1) then
     return update, 1000
   end
 
-  -- determine if progress update should be sent to user
-  local now_ms = millis()
+  -- determine if progress update should be sent to user every 5 second
+  local now_ms = millis() -- get the time since boot
   local update_user = false
   if (now_ms - last_print_ms > 5000) then
     last_print_ms = now_ms
