@@ -201,7 +201,8 @@ local recovery_delay_ms = 3000      -- switch to NEXT_MODE happens this many mil
 local gps_bad = false               -- true if GPS is failing checks
 local ekf_bad = false               -- true if EKF failsafe has triggered
 local gps_or_ekf_bad = true         -- true if GPS and/or EKF is bad, true once both have recovered
-local rc_bad = false
+local rc_bad = false                -- true if RC is failing checks
+local rc_or_something_bad = true    -- true if RC and/or something is bad, true once both have recovered
 
 local flight_stage = 0  -- 0. wait for good-gps and dist-from-home, 1=wait for bad gps or ekf, 2=level vehicle, 3=deadreckon home
 local gps_bad_start_time_ms = 0 -- system time GPS quality went bad (0 if not bad)
@@ -240,34 +241,45 @@ function update () -- periodic function that will be called
   local rc_ekf = not rc:has_valid_input()
   if rc_bad ~= rc_ekf then
     rc_bad = rc_ekf
-    gcs:send_text(0, "DR: RC bad")
   end
 
-  -- check for RC recovery
-  if rc_bad then
+  -- check for RC and/or something going bad
+  if not rc_or_something_bad and rc_bad then
+    rc_or_something_bad = true
+    gcs:send_text(0, "DR: RC and/or something bad")
+  end
+
+  -- check for RC and/or something recovery
+  if rc_or_something_bad and not rc_bad then
     -- start recovery timer
     if recovery_start_time_ms == 0 then
       recovery_start_time_ms = now_ms
     end
     if (now_ms - recovery_start_time_ms > recovery_delay_ms) then
-      rc_bad = false
+      rc_or_something_bad = false
       recovery_start_time_ms = 0
-      gcs:send_text(0, "DR: RC recovered")
+      gcs:send_text(0, "DR: RC and/or something recovered")
     end
   end
 
   -- reset flight_stage when disarmed
-  if not arming:is_armed() then 
+  if not arming:is_armed() then
     flight_stage = 0
     transition_start_time_ms = 0
     return update, interval_ms
   end
 
-  -- flight_stage 0: wait for good gps and dist-from-home
-  curr_alt_below_home = -ahrs:get_relative_position_D_home()
+  -- flight_stage 0: wait for
+  curr_alt_below_home = -ahrs:get_relative_position_D_home() --with negative
   if (flight_stage == 0) then
+
+    -- wait for RC to be good
+    if (rc_or_something_bad) then
+      return update, interval_ms
+    end
+    
     -- wait for altitude from home to pass DR_ENABLE_ALT
-    if ((curr_alt_below_home > 50) and (curr_alt_below_home >= enable_alt:get())) then
+    if (curr_alt_below_home >= enable_alt:get()) then
       gcs:send_text(5, "DR: enabled")
       flight_stage = 1
     elseif (update_user) then
@@ -279,7 +291,7 @@ function update () -- periodic function that will be called
 
   -- flight_stage 1: wait for RC loss
   if (flight_stage == 1) then
-    if (rc_bad and is_protected_mode()) then
+    if (rc_or_something_bad and is_protected_mode()) then
       -- change to Guided_NoGPS and initialise stage2
       if (vehicle:set_mode(copter_guided_nogps_mode)) then
         flight_stage = 2
@@ -313,7 +325,7 @@ function update () -- periodic function that will be called
     if ((now_ms - stage2_start_time_ms) >= 5000) then
       flight_stage = 3
       stage3_start_time_ms = now_ms
-      gcs:send_text(5, "DR: flying home")
+      gcs:send_text(5, "DR: flying back with last known yaw")
     end
     if (update_user) then
       gcs:send_text(5, "DR: leveling vehicle")
@@ -348,8 +360,8 @@ function update () -- periodic function that will be called
       gcs:send_text(0, "DR: failed to set attitude target")
     end
 
-    -- if GPS and EKF recover or timeout switch to next mode
-    if (not rc_bad) or timeout then
+    -- if RC and something recover or timeout switch to next mode
+    if (not rc_or_something_bad) or timeout then
       local recovery_mode = stage1_flight_mode
       if (next_mode:get() >= 0) then
         recovery_mode = next_mode:get()
