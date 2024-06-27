@@ -172,6 +172,7 @@ local wpnav_accel_z = Parameter("WPNAV_ACCEL_Z")       -- maximum vertical accel
 -- modes deadreckoning may be activated from
 -- comment out lines below to remove protection from these modes
 local protected_mode_array = {
+         0, -- STAB
          2, -- ALTHOLD
          3, -- AUTO
          4, -- GUIDED
