@@ -69,10 +69,10 @@ assert(param:add_param(PARAM_TABLE_KEY, 4, 'GPS_SAT_MIN', 6), 'could not add DR_
 assert(param:add_param(PARAM_TABLE_KEY, 5, 'GPS_TRIGG_SEC', 3), 'could not add DR_GPS_TRIGG_SEC parameter') -- GPS checks must fail for this many seconds before dead reckoning will be triggered
 
 assert(param:add_param(PARAM_TABLE_KEY, 6, 'FLY_ANGLE', 15), 'could not add DR_FLY_ANGLE param')    -- lean angle (in degrees) during deadreckoning
-assert(param:add_param(PARAM_TABLE_KEY, 7, 'FLY_ALT_MIN', 70), 'could not add DR_FLY_ALT_MIN param') -- min alt above home (in meters) during deadreckoning. zero to return at current alt
+assert(param:add_param(PARAM_TABLE_KEY, 7, 'FLY_ALT_MIN', 80), 'could not add DR_FLY_ALT_MIN param') -- min alt above home (in meters) during deadreckoning. zero to return at current alt
 assert(param:add_param(PARAM_TABLE_KEY, 8, 'FLY_TIMEOUT', 30), 'could not add DR_FLY_TIMEOUT param')-- deadreckoning timeout (in seconds)
-assert(param:add_param(PARAM_TABLE_KEY, 9, 'NEXT_MODE', 16), 'could not add DR_NEXT_MODE param')     -- mode to switch to after GPS recovers or timeout elapses
-assert(param:add_param(PARAM_TABLE_KEY, 10, 'ENABLE_ALT', 80), 'could not add DR_ENABLE_ALT param')   -- altitude from home (in meters) beyond which the dead reckoning will be enabled
+assert(param:add_param(PARAM_TABLE_KEY, 9, 'NEXT_MODE', 2), 'could not add DR_NEXT_MODE param')     -- mode to switch to after GPS recovers or timeout elapses
+assert(param:add_param(PARAM_TABLE_KEY, 10, 'ENABLE_ALT', 50), 'could not add DR_ENABLE_ALT param')   -- altitude from home (in meters) beyond which the dead reckoning will be enabled
 
 -- bind parameters to variables
 --[[
@@ -175,9 +175,9 @@ local protected_mode_array = {
          2, -- ALTHOLD
          3, -- AUTO
          4, -- GUIDED
-         --5, -- LOITER
+         5, -- LOITER
          6, -- RTL
-         7, -- CIRCLE
+         --7, -- CIRCLE
          9, -- LAND
          16, -- POSHOLD
          17, -- BRAKE
