@@ -320,7 +320,7 @@ function update () -- periodic function that will be called
     end
 
     -- level vehicle for 5 seconds
-    climb_rate = 0
+    climb_rate = 1
     vehicle:set_target_angle_and_climbrate(0, 0, target_yaw, climb_rate, false, 0)
     if ((now_ms - stage2_start_time_ms) >= 5000) then
       flight_stage = 3
