@@ -266,7 +266,7 @@ function update () -- periodic function that will be called
   -- reset flight_stage when disarmed
   if not arming:is_armed() then
     flight_stage = 0
-    transition_start_time_ms = 0
+    transition_start_time_ms = 0 -- error
     return update, interval_ms
   end
 
