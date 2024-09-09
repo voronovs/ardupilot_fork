@@ -302,15 +302,12 @@ function update () -- periodic function that will be called
   -- flight_stage 1: wait for RC loss
   if (flight_stage == 1) then
     
-    roll_data = {}
     pitch_data = {}
     yaw_data = {}
 
-    local current_roll = math.deg(ahrs:get_roll())
     local current_pitch = math.deg(ahrs:get_pitch())
     local current_yaw = math.deg(ahrs:get_yaw())
 
-    table.insert(roll_data, current_roll)
     table.insert(pitch_data, current_pitch)
     table.insert(yaw_data, current_yaw)
 
@@ -389,17 +386,12 @@ function update () -- periodic function that will be called
     -- set angle target to roll 0, pitch to lean angle (note: negative is forward), yaw towards home
 
     local last_pitch = pitch_data[#pitch_data]
-    local last_pitch_reversed = -math.floor(last_pitch)
     table.remove(pitch_data, #pitch_data)
-
-    local last_roll = roll_data[#roll_data]
-    local last_roll_reversed = -math.floor(last_roll)
-    table.remove(roll_data, #roll_data)
 
     local last_yaw = yaw_data[#yaw_data]
     table.remove(yaw_data, #yaw_data)
 
-    if (vehicle:set_target_angle_and_climbrate(last_roll_reversed, last_pitch_reversed, last_yaw, 0, false, 0)) then
+    if (vehicle:set_target_angle_and_climbrate(0, -math.abs(last_pitch), last_yaw, 0, false, 0)) then
       if (update_user) then
         local time_left_str = ""
         if (not timeout and (fly_timeoout:get() > 0)) then
