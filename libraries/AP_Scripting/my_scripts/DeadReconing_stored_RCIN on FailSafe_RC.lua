@@ -72,7 +72,7 @@ assert(param:add_param(PARAM_TABLE_KEY, 6, 'FLY_ANGLE', 15), 'could not add DR_F
 assert(param:add_param(PARAM_TABLE_KEY, 7, 'FLY_ALT_MIN', 80), 'could not add DR_FLY_ALT_MIN param') -- min alt above home (in meters) during deadreckoning. zero to return at current alt
 assert(param:add_param(PARAM_TABLE_KEY, 8, 'FLY_TIMEOUT', 180), 'could not add DR_FLY_TIMEOUT param')-- deadreckoning timeout (in seconds)
 assert(param:add_param(PARAM_TABLE_KEY, 9, 'NEXT_MODE', 2), 'could not add DR_NEXT_MODE param')     -- mode to switch to after GPS recovers or timeout elapses
-assert(param:add_param(PARAM_TABLE_KEY, 10, 'ENABLE_ALT', 50), 'could not add DR_ENABLE_ALT param')   -- altitude from home (in meters) beyond which the dead reckoning will be enabled
+assert(param:add_param(PARAM_TABLE_KEY, 10, 'ENABLE_ALT', 5), 'could not add DR_ENABLE_ALT param')   -- altitude from home (in meters) beyond which the dead reckoning will be enabled
 
 -- bind parameters to variables
 --[[
@@ -223,6 +223,15 @@ local stage3_start_time_ms  -- system time stage3 started (deadreckon home)
 local last_print_ms = 0     -- pilot update timer
 local interval_ms = 100     -- update at 10hz
 
+--local filePath = "RCIN_record.txt"
+--local file_clear = io.open(filePath, "w")
+--if file_clear then
+  --file_clear:close()
+  --gcs:send_text(5, "file removed")
+--else
+  --gcs:send_text(5, "impossible to remove file")
+--end
+
 function update () -- periodic function that will be called
 
   -- exit immediately if not enabled
@@ -292,7 +301,36 @@ function update () -- periodic function that will be called
 
   -- flight_stage 1: wait for RC loss
   if (flight_stage == 1) then
+    
+    roll_data = {}
+    pitch_data = {}
+    yaw_data = {}
+
+    local current_roll = math.deg(ahrs:get_roll())
+    local current_pitch = math.deg(ahrs:get_pitch())
+    local current_yaw = math.deg(ahrs:get_yaw())
+
+    table.insert(roll_data, current_roll)
+    table.insert(pitch_data, current_pitch)
+    table.insert(yaw_data, current_yaw)
+
+    -- array of 4 RCIN
+    --local orientation_current = {current_roll, current_pitch, current_yaw}
+    --local orientation_current_str = table.concat(orientation_current, " ")
+    
+    --local file = io.open(filePath, "a")
+
+    --if file then
+   
+      --file:write(orientation_current_str .. "\n")
+
+      --file:close()
+    --else
+      --gcs:send_text(5, "DR: impossible to open file")
+    --end
+
     if (rc_or_something_bad and is_protected_mode()) then
+
       -- change to Guided_NoGPS and initialise stage2
       if (vehicle:set_mode(copter_guided_nogps_mode)) then
         flight_stage = 2
@@ -322,7 +360,7 @@ function update () -- periodic function that will be called
 
     -- level vehicle for 5 seconds
     climb_rate = 1
-    vehicle:set_target_angle_and_climbrate(0, 0, target_yaw, climb_rate, false, 0)
+    vehicle:set_target_angle_and_climbrate(0, 0, target_yaw, 0, false, 0)
     if ((now_ms - stage2_start_time_ms) >= 5000) then
       flight_stage = 3
       stage3_start_time_ms = now_ms
@@ -349,7 +387,19 @@ function update () -- periodic function that will be called
     local timeout = (fly_timeoout:get() > 0) and (time_elapsed_ms >= (fly_timeoout:get() * 1000))
 
     -- set angle target to roll 0, pitch to lean angle (note: negative is forward), yaw towards home
-    if (vehicle:set_target_angle_and_climbrate(0, math.abs(fly_angle:get()), target_yaw, climb_rate, false, 0)) then
+
+    local last_pitch = pitch_data[#pitch_data]
+    local last_pitch_reversed = -math.floor(last_pitch)
+    table.remove(pitch_data, #pitch_data)
+
+    local last_roll = roll_data[#roll_data]
+    local last_roll_reversed = -math.floor(last_roll)
+    table.remove(roll_data, #roll_data)
+
+    local last_yaw = yaw_data[#yaw_data]
+    table.remove(yaw_data, #yaw_data)
+
+    if (vehicle:set_target_angle_and_climbrate(last_roll_reversed, last_pitch_reversed, last_yaw, 0, false, 0)) then
       if (update_user) then
         local time_left_str = ""
         if (not timeout and (fly_timeoout:get() > 0)) then
