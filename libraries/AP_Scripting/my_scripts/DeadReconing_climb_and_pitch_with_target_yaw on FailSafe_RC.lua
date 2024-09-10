@@ -355,7 +355,7 @@ function update () -- periodic function that will be called
         if (not timeout and (fly_timeoout:get() > 0)) then
           time_left_str = " t:" .. tostring(math.max(0, ((fly_timeoout:get() * 1000) - time_elapsed_ms) / 1000))
         end
-        gcs:send_text(5, "DR: fly home yaw:" .. tostring(math.floor(target_yaw)) .. " pit:" .. tostring(-math.floor(fly_angle:get())) .. " cr:" .. tostring(math.floor(climb_rate*10)/10) .. time_left_str)
+        gcs:send_text(5, "DR: fly home yaw:" .. tostring(math.floor(target_yaw)) .. " pit:" .. tostring(math.floor(fly_angle:get())) .. " cr:" .. tostring(math.floor(climb_rate*10)/10) .. time_left_str)
       end
     elseif (update_user) then
       gcs:send_text(0, "DR: failed to set attitude target")
