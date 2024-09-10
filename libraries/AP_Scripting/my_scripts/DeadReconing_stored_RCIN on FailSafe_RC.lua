@@ -436,6 +436,7 @@ function update () -- periodic function that will be called
 
     -- if RC and something recover or timeout switch to next mode
     if (not rc_or_something_bad) or timeout then
+
       if not timeout then
         time_left = stage2_start_time_ms - stage1_start_time_ms + time_left - time_elapsed_ms
       end
@@ -444,9 +445,9 @@ function update () -- periodic function that will be called
       if (next_mode:get() >= 0) then
         recovery_mode = next_mode:get()
       end
-      if (recovery_mode == nil) then
+      if (recovery_mode == nil) or rc_or_something_bad then
         recovery_mode = copter_RTL_mode
-        gcs:send_text(0, "DR: NEXT_MODE=-1 but fallingback to RTL")
+        gcs:send_text(0, "DR: NEXT_MODE=-1 or timeout with rc_or_something_bad but fallingback to RTL")
       end
       -- change to DR_NEXT_MODE
       if (vehicle:set_mode(recovery_mode)) then
