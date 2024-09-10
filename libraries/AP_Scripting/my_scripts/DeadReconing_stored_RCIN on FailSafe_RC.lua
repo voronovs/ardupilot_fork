@@ -232,14 +232,14 @@ local roll_data = {}
 local pitch_data = {}
 local yaw_data = {}
 
-local filePath = "RCIN_record.txt"
-local file_clear = io.open(filePath, "w")
-if file_clear then
-  file_clear:close()
-  gcs:send_text(5, "file removed")
-else
-  gcs:send_text(5, "impossible to remove file")
-end
+--local filePath = "RCIN_record.txt"
+--local file_clear = io.open(filePath, "w")
+--if file_clear then
+  --file_clear:close()
+  --gcs:send_text(5, "file removed")
+--else
+  --gcs:send_text(5, "impossible to remove file")
+--end
 
 function update () -- periodic function that will be called
 
@@ -321,19 +321,19 @@ function update () -- periodic function that will be called
     yaw_data[#yaw_data + 1] = current_yaw
 
     -- array of current orientation
-    local orientation_current = {current_roll, current_pitch, current_yaw}
-    local orientation_current_str = table.concat(orientation_current, " ")
+    --local orientation_current = {current_roll, current_pitch, current_yaw}
+    --local orientation_current_str = table.concat(orientation_current, " ")
     
-    local file = io.open(filePath, "a")
+    --local file = io.open(filePath, "a")
 
-    if file then
+    --if file then
    
-      file:write(orientation_current_str .. "\n")
+      --file:write(orientation_current_str .. "\n")
 
-      file:close()
-    else
-      gcs:send_text(5, "DR: impossible to open file")
-    end
+      --file:close()
+    --else
+      --gcs:send_text(5, "DR: impossible to open file")
+    --end
 
     if (rc_or_something_bad and is_protected_mode()) then
 
