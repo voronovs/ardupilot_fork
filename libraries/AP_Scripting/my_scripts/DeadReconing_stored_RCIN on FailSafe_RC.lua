@@ -452,7 +452,7 @@ function update () -- periodic function that will be called
       -- change to DR_NEXT_MODE
       if (vehicle:set_mode(recovery_mode)) then
         flight_stage = 0
-      elseif (update_user) then
+      else
         -- warn user of unexpected failure     
         gcs:send_text(0, "DR: failed to change to mode " .. tostring(recovery_mode))
         recovery_mode = next_mode:get()
