@@ -221,6 +221,7 @@ local current_pitch = 0 -- deg
 local current_yaw = 0   -- deg
 
 local stage1_flight_mode = nil  -- flight mode vehicle was in during stage1 (may be used during recovery)
+local time_left = 0
 local stage1_start_time_ms  -- system time stage1 started (DR start)
 local stage2_start_time_ms  -- system time stage2 started (level vehicle)
 local stage3_start_time_ms  -- system time stage3 started (deadreckon home)
@@ -390,7 +391,7 @@ function update () -- periodic function that will be called
 
     -- check for timeout
     local time_elapsed_ms = now_ms - stage3_start_time_ms
-    local timeout = (time_elapsed_ms >= (stage2_start_time_ms-stage1_start_time_ms))
+    local timeout = (time_elapsed_ms >= (stage2_start_time_ms-stage1_start_time_ms + time_left))
 
     -- set angle target to roll 0, pitch to lean angle (note: negative is forward), yaw towards home
     lastIndexIn_roll_data = #roll_data
@@ -411,7 +412,7 @@ function update () -- periodic function that will be called
       if (update_user) then
         local time_left_str = ""
         if (not timeout and (fly_timeoout:get() > 0)) then
-          time_left_str = " t:" .. tostring(math.max(0, ((stage2_start_time_ms-stage1_start_time_ms) - time_elapsed_ms) / 1000))
+          time_left_str = " t:" .. tostring(math.max(0, (stage2_start_time_ms - stage1_start_time_ms + time_left - time_elapsed_ms) / 1000))
         end
         gcs:send_text(5, "DR: fly home roll:" .. tostring(math.floor(target_roll)) .. " pit:" .. tostring(-math.floor(target_pitch)) .. " yaw:" .. tostring(math.floor(target_yaw)) .." cr:" .. tostring(math.floor(climb_rate*10)/10) .. time_left_str)
       end
@@ -427,6 +428,10 @@ function update () -- periodic function that will be called
 
     -- if RC and something recover or timeout switch to next mode
     if (not rc_or_something_bad) or timeout then
+      if not timeout then
+        time_left = stage2_start_time_ms - stage1_start_time_ms + time_left - time_elapsed_ms
+      end
+
       local recovery_mode = stage1_flight_mode
       if (next_mode:get() >= 0) then
         recovery_mode = next_mode:get()
