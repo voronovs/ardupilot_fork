@@ -458,6 +458,7 @@ function update () -- periodic function that will be called
         recovery_mode = next_mode:get()
         vehicle:set_mode(recovery_mode)
         gcs:send_text(0, "DR: NEXT_MODE AltHold")
+        flight_stage = 0
       end
     end
     return update, interval_ms
