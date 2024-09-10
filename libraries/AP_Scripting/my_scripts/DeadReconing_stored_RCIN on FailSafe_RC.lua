@@ -177,9 +177,9 @@ local protected_mode_array = {
          3, -- AUTO
          4, -- GUIDED
          5, -- LOITER
-         6, -- RTL
+         --6, -- RTL
          --7, -- CIRCLE
-         9, -- LAND
+         --9, -- LAND
          16, -- POSHOLD
          17, -- BRAKE
          21, -- SMART_RTL
