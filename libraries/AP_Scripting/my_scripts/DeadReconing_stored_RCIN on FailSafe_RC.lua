@@ -216,21 +216,29 @@ local curr_alt_below_home = 0      -- altitude from home in meters
 
 local target_yaw = 0    -- deg
 local climb_rate = 0    -- m/s
+local current_roll = 0  -- deg
+local current_pitch = 0 -- deg
+local current_yaw = 0   -- deg
 
 local stage1_flight_mode = nil  -- flight mode vehicle was in during stage1 (may be used during recovery)
+local stage1_start_time_ms  -- system time stage1 started (DR start)
 local stage2_start_time_ms  -- system time stage2 started (level vehicle)
 local stage3_start_time_ms  -- system time stage3 started (deadreckon home)
 local last_print_ms = 0     -- pilot update timer
 local interval_ms = 100     -- update at 10hz
 
---local filePath = "RCIN_record.txt"
---local file_clear = io.open(filePath, "w")
---if file_clear then
-  --file_clear:close()
-  --gcs:send_text(5, "file removed")
---else
-  --gcs:send_text(5, "impossible to remove file")
---end
+local roll_data = {}
+local pitch_data = {}
+local yaw_data = {}
+
+local filePath = "RCIN_record.txt"
+local file_clear = io.open(filePath, "w")
+if file_clear then
+  file_clear:close()
+  gcs:send_text(5, "file removed")
+else
+  gcs:send_text(5, "impossible to remove file")
+end
 
 function update () -- periodic function that will be called
 
@@ -292,6 +300,7 @@ function update () -- periodic function that will be called
     if (curr_alt_below_home >= enable_alt:get()) then
       gcs:send_text(5, "DR: enabled")
       flight_stage = 1
+      stage1_start_time_ms = now_ms
     elseif (update_user) then
       gcs:send_text(5, "DR: waiting for alt:" .. tostring(math.floor(curr_alt_below_home)) .. " need:" .. tostring(math.floor(enable_alt:get())))
     end
@@ -301,37 +310,36 @@ function update () -- periodic function that will be called
 
   -- flight_stage 1: wait for RC loss
   if (flight_stage == 1) then
+
+    current_roll = math.deg(ahrs:get_roll())
+    current_pitch = math.deg(ahrs:get_pitch())
+    current_yaw = math.deg(ahrs:get_yaw())
+
+    roll_data[#roll_data + 1] = current_roll
+    pitch_data[#pitch_data + 1] = current_pitch
+    yaw_data[#yaw_data + 1] = current_yaw
+
+    -- array of current orientation
+    local orientation_current = {current_roll, current_pitch, current_yaw}
+    local orientation_current_str = table.concat(orientation_current, " ")
     
-    pitch_data = {}
-    yaw_data = {}
+    local file = io.open(filePath, "a")
 
-    local current_pitch = math.deg(ahrs:get_pitch())
-    local current_yaw = math.deg(ahrs:get_yaw())
-
-    table.insert(pitch_data, current_pitch)
-    table.insert(yaw_data, current_yaw)
-
-    -- array of 4 RCIN
-    --local orientation_current = {current_roll, current_pitch, current_yaw}
-    --local orientation_current_str = table.concat(orientation_current, " ")
-    
-    --local file = io.open(filePath, "a")
-
-    --if file then
+    if file then
    
-      --file:write(orientation_current_str .. "\n")
+      file:write(orientation_current_str .. "\n")
 
-      --file:close()
-    --else
-      --gcs:send_text(5, "DR: impossible to open file")
-    --end
+      file:close()
+    else
+      gcs:send_text(5, "DR: impossible to open file")
+    end
 
     if (rc_or_something_bad and is_protected_mode()) then
 
       -- change to Guided_NoGPS and initialise stage2
       if (vehicle:set_mode(copter_guided_nogps_mode)) then
         flight_stage = 2
-        target_yaw = math.deg(ahrs:get_yaw())
+        target_yaw = current_yaw
         stage2_start_time_ms = now_ms
       else
         -- warn user of unexpected failure
@@ -348,6 +356,7 @@ function update () -- periodic function that will be called
 
   -- flight_stage 2: level vehicle for 5 seconds
   if (flight_stage == 2) then
+    
     -- allow pilot to retake control
     if (vehicle:get_mode() ~= copter_guided_nogps_mode) then
       gcs:send_text(5, "DR: pilot retook control")
@@ -356,7 +365,7 @@ function update () -- periodic function that will be called
     end
 
     -- level vehicle for 5 seconds
-    climb_rate = 1
+    climb_rate = 0.1
     vehicle:set_target_angle_and_climbrate(0, 0, target_yaw, 0, false, 0)
     if ((now_ms - stage2_start_time_ms) >= 5000) then
       flight_stage = 3
@@ -381,27 +390,40 @@ function update () -- periodic function that will be called
 
     -- check for timeout
     local time_elapsed_ms = now_ms - stage3_start_time_ms
-    local timeout = (fly_timeoout:get() > 0) and (time_elapsed_ms >= (fly_timeoout:get() * 1000))
+    local timeout = (time_elapsed_ms >= (stage2_start_time_ms-stage1_start_time_ms))
 
     -- set angle target to roll 0, pitch to lean angle (note: negative is forward), yaw towards home
+    lastIndexIn_roll_data = #roll_data
+    lastIndexIn_pitch_data = #pitch_data
+    lastIndexIn_yaw_data = #yaw_data
 
-    local last_pitch = pitch_data[#pitch_data]
-    table.remove(pitch_data, #pitch_data)
+    if (lastIndexIn_roll_data == 1) then
+      target_roll = math.deg(0)
+      target_pitch = math.deg(0)
+      target_yaw = target_yaw
+    else
+      target_roll = roll_data[lastIndexIn_roll_data]
+      target_pitch = pitch_data[lastIndexIn_pitch_data]
+      target_yaw = yaw_data[lastIndexIn_yaw_data]
+    end    
 
-    local last_yaw = yaw_data[#yaw_data]
-    table.remove(yaw_data, #yaw_data)
-
-    if (vehicle:set_target_angle_and_climbrate(0, -math.abs(last_pitch), last_yaw, 0, false, 0)) then
+    if (vehicle:set_target_angle_and_climbrate(target_roll, -target_pitch, target_yaw, climb_rate, false, 0)) then
       if (update_user) then
         local time_left_str = ""
         if (not timeout and (fly_timeoout:get() > 0)) then
-          time_left_str = " t:" .. tostring(math.max(0, ((fly_timeoout:get() * 1000) - time_elapsed_ms) / 1000))
+          time_left_str = " t:" .. tostring(math.max(0, ((stage2_start_time_ms-stage1_start_time_ms) - time_elapsed_ms) / 1000))
         end
-        gcs:send_text(5, "DR: fly home yaw:" .. tostring(math.floor(target_yaw)) .. " pit:" .. tostring(-math.floor(fly_angle:get())) .. " cr:" .. tostring(math.floor(climb_rate*10)/10) .. time_left_str)
+        gcs:send_text(5, "DR: fly home roll:" .. tostring(math.floor(target_roll)) .. " pit:" .. tostring(-math.floor(target_pitch)) .. " yaw:" .. tostring(math.floor(target_yaw)) .." cr:" .. tostring(math.floor(climb_rate*10)/10) .. time_left_str)
       end
     elseif (update_user) then
       gcs:send_text(0, "DR: failed to set attitude target")
     end
+
+    if (lastIndexIn_roll_data ~= 1)then
+      roll_data[lastIndexIn_roll_data] = nil
+      pitch_data[lastIndexIn_pitch_data] = nil
+      yaw_data[lastIndexIn_yaw_data] = nil
+    end   
 
     -- if RC and something recover or timeout switch to next mode
     if (not rc_or_something_bad) or timeout then
