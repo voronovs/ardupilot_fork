@@ -366,7 +366,7 @@ function update () -- periodic function that will be called
     end
 
     -- level vehicle for 5 seconds
-    climb_rate = 0.1
+    climb_rate = 0
     vehicle:set_target_angle_and_climbrate(0, 0, target_yaw, 0, false, 0)
     if ((now_ms - stage2_start_time_ms) >= 5000) then
       flight_stage = 3
@@ -407,6 +407,14 @@ function update () -- periodic function that will be called
       target_pitch = pitch_data[lastIndexIn_pitch_data]
       target_yaw = yaw_data[lastIndexIn_yaw_data]
     end    
+
+    if (curr_alt_below_home <= 200) then
+      climb_rate = 1
+    elseif (200 < curr_alt_below_home < 500) then
+      climb_rate = 0.1
+    else
+      climb_rate = 0
+    end
 
     if (vehicle:set_target_angle_and_climbrate(target_roll, -target_pitch, target_yaw, climb_rate, false, 0)) then
       if (update_user) then
