@@ -410,7 +410,7 @@ function update () -- periodic function that will be called
 
     if (curr_alt_below_home <= 200) then
       climb_rate = 1
-    elseif (200 < curr_alt_below_home < 500) then
+    elseif (200 < curr_alt_below_home and curr_alt_below_home < 500) then
       climb_rate = 0.1
     else
       climb_rate = 0
