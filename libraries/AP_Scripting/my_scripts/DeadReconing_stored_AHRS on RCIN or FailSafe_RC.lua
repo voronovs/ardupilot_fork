@@ -257,19 +257,20 @@ function update () -- periodic function that will be called
   end
 
   -- check RC failsafe
+  pwm8 = rc:get_pwm(8)
   local rc_loss = not rc:has_valid_input()
   if rc_bad ~= rc_loss then
     rc_bad = rc_loss
   end
 
   -- check for RC and/or something going bad
-  if not rc_or_something_bad and rc_bad then
+  if not rc_or_something_bad and (rc_bad or pwm8 > 1600) then
     rc_or_something_bad = true
     gcs:send_text(0, "DR: RC and/or something bad")
   end
 
   -- check for RC and/or something recovery
-  if rc_or_something_bad and not rc_bad then
+  if rc_or_something_bad and (not rc_bad and pwm8 < 1600) then
     -- start recovery timer
     if recovery_start_time_ms == 0 then
       recovery_start_time_ms = now_ms
