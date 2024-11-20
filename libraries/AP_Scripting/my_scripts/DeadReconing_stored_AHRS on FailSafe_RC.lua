@@ -226,7 +226,7 @@ local stage1_start_time_ms  -- system time stage1 started (DR start)
 local stage2_start_time_ms  -- system time stage2 started (level vehicle)
 local stage3_start_time_ms  -- system time stage3 started (deadreckon home)
 local last_print_ms = 0     -- pilot update timer
-local interval_ms = 100     -- update at 10hz
+local interval_ms = 500     -- update at 5hz
 
 local roll_data = {}
 local pitch_data = {}
