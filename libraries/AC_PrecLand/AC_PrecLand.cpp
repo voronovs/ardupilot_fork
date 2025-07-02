@@ -4,7 +4,6 @@
 
 #include "AC_PrecLand.h"
 #include <AP_HAL/AP_HAL.h>
-#include <AP_Scheduler/AP_Scheduler.h>
 #include <AP_AHRS/AP_AHRS.h>
 
 #include "AC_PrecLand_Backend.h"
@@ -226,7 +225,7 @@ void AC_PrecLand::init(uint16_t update_rate_hz)
     _lag.set(constrain_float(_lag, 0.02f, 0.25f));  // must match LAG parameter range at line 124
 
     // calculate inertial buffer size from lag and minimum of main loop rate and update_rate_hz argument
-    const uint16_t inertial_buffer_size = MAX((uint16_t)roundf(_lag * MIN(update_rate_hz, AP::scheduler().get_loop_rate_hz())), 1);
+    const uint16_t inertial_buffer_size = MAX((uint16_t)roundf(_lag * update_rate_hz), 1);
 
     // instantiate ring buffer to hold inertial history, return on failure so no backends are created
     _inertial_history = NEW_NOTHROW ObjectArray<inertial_data_frame_s>(inertial_buffer_size);
@@ -351,7 +350,7 @@ void AC_PrecLand::check_target_status(float rangefinder_alt_m, bool rangefinder_
     if (_current_target_state == TargetState::TARGET_RECENTLY_LOST) {
         // check if it's nearby/found recently, else the status will be demoted to "TARGET_LOST"
         Vector2f curr_pos;
-        if (AP::ahrs().get_relative_position_NE_origin(curr_pos)) {
+        if (AP::ahrs().get_relative_position_NE_origin_float(curr_pos)) {
             const float dist_to_last_target_loc_xy = (curr_pos - Vector2f{_last_target_pos_rel_origin_NED.x, _last_target_pos_rel_origin_NED.y}).length();
             const float dist_to_last_loc_xy = (curr_pos - Vector2f{_last_vehicle_pos_NED.x, _last_vehicle_pos_NED.y}).length();
             if ((AP_HAL::millis() - _last_valid_target_ms) > LANDING_TARGET_LOST_TIMEOUT_MS) {
@@ -419,7 +418,7 @@ bool AC_PrecLand::get_target_position_cm(Vector2f& ret)
         return false;
     }
     Vector2f curr_pos;
-    if (!AP::ahrs().get_relative_position_NE_origin(curr_pos)) {
+    if (!AP::ahrs().get_relative_position_NE_origin_float(curr_pos)) {
         return false;
     }
     ret.x = (_target_pos_rel_out_NE.x + curr_pos.x) * 100.0f;   // m to cm
@@ -620,7 +619,7 @@ bool AC_PrecLand::retrieve_los_meas(Vector3f& target_vec_unit_body)
         _last_backend_los_meas_ms = los_meas_time_ms;
         if (!is_zero(_yaw_align)) {
             // Apply sensor yaw alignment rotation
-            target_vec_unit_body.rotate_xy(radians(_yaw_align*0.01f));
+            target_vec_unit_body.rotate_xy(cd_to_rad(_yaw_align));
         }
 
 
@@ -682,7 +681,7 @@ bool AC_PrecLand::construct_pos_meas_using_rangefinder(float rangefinder_alt_m, 
             // store the current relative down position so that if we need to retry landing, we know at this height landing target can be found
             const AP_AHRS &_ahrs = AP::ahrs();
             Vector3f pos_NED;
-            if (_ahrs.get_relative_position_NED_origin(pos_NED)) {
+            if (_ahrs.get_relative_position_NED_origin_float(pos_NED)) {
                 _last_target_pos_rel_origin_NED.z = pos_NED.z;
                 _last_vehicle_pos_NED = pos_NED;
             }

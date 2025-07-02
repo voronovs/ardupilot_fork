@@ -136,11 +136,6 @@ bool AP_Logger_MAVLink::_WritePrioritisedBlock(const void *pBuffer, uint16_t siz
         return false;
     }
 
-    if (! WriteBlockCheckStartupMessages()) {
-        semaphore.give();
-        return false;
-    }
-
     if (bufferspace_available() < size) {
         if (_startup_messagewriter->finished()) {
             // do not count the startup packets as being dropped...
@@ -332,13 +327,13 @@ void AP_Logger_MAVLink::stats_reset() {
     stats.collection_count = 0;
 }
 
-void AP_Logger_MAVLink::Write_logger_MAV(AP_Logger_MAVLink &logger_mav)
+void AP_Logger_MAVLink::Write_DMS(AP_Logger_MAVLink &logger_mav)
 {
     if (logger_mav.stats.collection_count == 0) {
         return;
     }
-    const struct log_MAV_Stats pkt{
-        LOG_PACKET_HEADER_INIT(LOG_MAV_STATS),
+    const struct log_DMS pkt{
+        LOG_PACKET_HEADER_INIT(LOG_DMS_MSG),
         timestamp         : AP_HAL::micros64(),
         seqno             : logger_mav._next_seq_num-1,
         dropped           : logger_mav._dropped,
@@ -365,7 +360,7 @@ void AP_Logger_MAVLink::stats_log()
     if (stats.collection_count == 0) {
         return;
     }
-    Write_logger_MAV(*this);
+    Write_DMS(*this);
 #if REMOTE_LOG_DEBUGGING
     printf("D:%d Retry:%d Resent:%d SF:%d/%d/%d SP:%d/%d/%d SS:%d/%d/%d SR:%d/%d/%d\n",
            _dropped,

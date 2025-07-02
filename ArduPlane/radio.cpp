@@ -8,16 +8,17 @@
  */
 void Plane::set_control_channels(void)
 {
+    // the library guarantees that these are non-nullptr:
     if (g.rudder_only) {
         // in rudder only mode the roll and rudder channels are the
         // same.
-        channel_roll = RC_Channels::rc_channel(rcmap.yaw()-1);
+        channel_roll = &rc().get_yaw_channel();
     } else {
-        channel_roll = RC_Channels::rc_channel(rcmap.roll()-1);
+        channel_roll = &rc().get_roll_channel();
     }
-    channel_pitch    = RC_Channels::rc_channel(rcmap.pitch()-1);
-    channel_throttle = RC_Channels::rc_channel(rcmap.throttle()-1);
-    channel_rudder   = RC_Channels::rc_channel(rcmap.yaw()-1);
+    channel_pitch    = &rc().get_pitch_channel();
+    channel_throttle = &rc().get_throttle_channel();
+    channel_rudder   = &rc().get_yaw_channel();
 
     // set rc channel ranges
     channel_roll->set_angle(SERVO_MAX);
@@ -57,6 +58,8 @@ void Plane::set_control_channels(void)
         // setup correct scaling for ESCs like the UAVCAN ESCs which
         // take a proportion of speed. For quadplanes we use AP_Motors
         // scaling
+        g2.servo_channels.set_esc_scaling_for(SRV_Channel::k_throttleLeft);
+        g2.servo_channels.set_esc_scaling_for(SRV_Channel::k_throttleRight);
         g2.servo_channels.set_esc_scaling_for(SRV_Channel::k_throttle);
     }
 }
@@ -104,7 +107,7 @@ void Plane::init_rc_out_main()
  */
 void Plane::init_rc_out_aux()
 {
-    SRV_Channels::enable_aux_servos();
+    AP::srv().enable_aux_servos();
 
     servos_output();
     
@@ -282,8 +285,9 @@ void Plane::control_failsafe()
 
     const bool allow_failsafe_bypass = !arming.is_armed() && !is_flying() && (rc().enabled_protocols() != 0);
     const bool has_had_input = rc().has_had_rc_receiver() || rc().has_had_rc_override();
-    if ((ThrFailsafe(g.throttle_fs_enabled.get()) != ThrFailsafe::Enabled) || (allow_failsafe_bypass && !has_had_input)) {
-        // If not flying and disarmed don't trigger failsafe until RC has been received for the fist time
+    if ((g.throttle_fs_enabled != ThrFailsafe::Enabled && !failsafe.rc_failsafe) || (allow_failsafe_bypass && !has_had_input)) {
+        // If throttle fs not enabled and not in failsafe, or 
+        // not flying and disarmed, don't trigger failsafe check until RC has been received for the fist time  
         return;
     }
 
@@ -384,7 +388,7 @@ void Plane::trim_radio()
  */
 bool Plane::rc_throttle_value_ok(void) const
 {
-    if (ThrFailsafe(g.throttle_fs_enabled.get()) == ThrFailsafe::Disabled) {
+    if (g.throttle_fs_enabled == ThrFailsafe::Disabled) {
         return true;
     }
     if (channel_throttle->get_reverse()) {

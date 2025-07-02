@@ -89,36 +89,19 @@ AP_GPS_DroneCAN::~AP_GPS_DroneCAN()
 #endif
 }
 
-void AP_GPS_DroneCAN::subscribe_msgs(AP_DroneCAN* ap_dronecan)
+bool AP_GPS_DroneCAN::subscribe_msgs(AP_DroneCAN* ap_dronecan)
 {
-    if (ap_dronecan == nullptr) {
-        return;
-    }
+    const auto driver_index = ap_dronecan->get_driver_index();
 
-    if (Canard::allocate_sub_arg_callback(ap_dronecan, &handle_fix2_msg_trampoline, ap_dronecan->get_driver_index()) == nullptr) {
-        AP_BoardConfig::allocation_error("status_sub");
-    }
-
-    if (Canard::allocate_sub_arg_callback(ap_dronecan, &handle_aux_msg_trampoline, ap_dronecan->get_driver_index()) == nullptr) {
-        AP_BoardConfig::allocation_error("status_sub");
-    }
-
-    if (Canard::allocate_sub_arg_callback(ap_dronecan, &handle_heading_msg_trampoline, ap_dronecan->get_driver_index()) == nullptr) {
-        AP_BoardConfig::allocation_error("status_sub");
-    }
-
-    if (Canard::allocate_sub_arg_callback(ap_dronecan, &handle_status_msg_trampoline, ap_dronecan->get_driver_index()) == nullptr) {
-        AP_BoardConfig::allocation_error("status_sub");
-    }
+    return (Canard::allocate_sub_arg_callback(ap_dronecan, &handle_fix2_msg_trampoline, driver_index) != nullptr)
+        && (Canard::allocate_sub_arg_callback(ap_dronecan, &handle_aux_msg_trampoline, driver_index) != nullptr)
+        && (Canard::allocate_sub_arg_callback(ap_dronecan, &handle_heading_msg_trampoline, driver_index) != nullptr)
+        && (Canard::allocate_sub_arg_callback(ap_dronecan, &handle_status_msg_trampoline, driver_index) != nullptr)
 #if GPS_MOVING_BASELINE
-    if (Canard::allocate_sub_arg_callback(ap_dronecan, &handle_moving_baseline_msg_trampoline, ap_dronecan->get_driver_index()) == nullptr) {
-        AP_BoardConfig::allocation_error("moving_baseline_sub");
-    }
-
-    if (Canard::allocate_sub_arg_callback(ap_dronecan, &handle_relposheading_msg_trampoline, ap_dronecan->get_driver_index()) == nullptr) {
-        AP_BoardConfig::allocation_error("relposheading_sub");
-    }
+        && (Canard::allocate_sub_arg_callback(ap_dronecan, &handle_moving_baseline_msg_trampoline, driver_index) != nullptr)
+        && (Canard::allocate_sub_arg_callback(ap_dronecan, &handle_relposheading_msg_trampoline, driver_index) != nullptr)
 #endif
+    ;
 }
 
 AP_GPS_Backend* AP_GPS_DroneCAN::probe(AP_GPS &_gps, AP_GPS::GPS_State &_state)
@@ -225,10 +208,15 @@ AP_GPS_Backend* AP_GPS_DroneCAN::probe(AP_GPS &_gps, AP_GPS::GPS_State &_state)
     return backend;
 }
 
-bool AP_GPS_DroneCAN::backends_healthy(char failure_msg[], uint16_t failure_msg_len)
+bool AP_GPS_DroneCAN::inter_instance_pre_arm_checks(char failure_msg[], uint16_t failure_msg_len)
 {
+    // lint parameters and detected node IDs:
     for (uint8_t i = 0; i < GPS_MAX_RECEIVERS; i++) {
         const auto &params_i = AP::gps().params[i];
+        // we are only interested in parameters for DroneCAN GPSs:
+        if (!is_dronecan_gps_type(params_i.type)) {
+            continue;
+        }
         bool overriden_node_found = false;
         bool bad_override_config = false;
         if (params_i.override_node_id == 0) {
@@ -237,6 +225,10 @@ bool AP_GPS_DroneCAN::backends_healthy(char failure_msg[], uint16_t failure_msg_
         }
         for (uint8_t j = 0; j < GPS_MAX_RECEIVERS; j++) {
             const auto &params_j = AP::gps().params[j];
+            // we are only interested in parameters for DroneCAN GPSs:
+            if (!is_dronecan_gps_type(params_j.type)) {
+                continue;
+            }
             if (params_i.override_node_id == params_j.override_node_id && (i != j)) {
                 bad_override_config = true;
                 break;
@@ -389,8 +381,17 @@ void AP_GPS_DroneCAN::handle_fix2_msg(const uavcan_equipment_gnss_Fix2& msg, uin
         loc.lat = msg.latitude_deg_1e8 / 10;
         loc.lng = msg.longitude_deg_1e8 / 10;
         const int32_t alt_amsl_cm = msg.height_msl_mm / 10;
-        interim_state.have_undulation = true;
-        interim_state.undulation = (msg.height_msl_mm - msg.height_ellipsoid_mm) * 0.001;
+        // if ellipsoid height is not supported by the GPS driver (or always
+        // with older releases), AP_Periph reports height_ellipsoid_mm == height_msl_mm .
+        // only trust that we have a valid ellipsoid height if we've ever seen
+        // it different from msl
+        if (msg.height_msl_mm != msg.height_ellipsoid_mm) {
+            seen_valid_height_ellipsoid = true;
+        }
+        interim_state.have_undulation = seen_valid_height_ellipsoid;
+        if (seen_valid_height_ellipsoid) {
+            interim_state.undulation = (msg.height_msl_mm - msg.height_ellipsoid_mm) * 0.001;
+        }
         interim_state.location = loc;
         set_alt_amsl_cm(interim_state, alt_amsl_cm);
 
@@ -418,15 +419,14 @@ void AP_GPS_DroneCAN::handle_fix2_msg(const uavcan_equipment_gnss_Fix2& msg, uin
                 interim_state.have_speed_accuracy = false;
             }
         }
-
-        interim_state.num_sats = msg.sats_used;
     } else {
         interim_state.have_vertical_velocity = false;
         interim_state.have_vertical_accuracy = false;
         interim_state.have_horizontal_accuracy = false;
         interim_state.have_speed_accuracy = false;
-        interim_state.num_sats = 0;
     }
+
+    interim_state.num_sats = msg.sats_used;
 
     if (!seen_aux) {
         // if we haven't seen an Aux message then populate vdop and

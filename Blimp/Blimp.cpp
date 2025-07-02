@@ -165,9 +165,11 @@ void Blimp::ten_hz_logging_loop()
     }
     if (should_log(MASK_LOG_RCIN)) {
         logger.Write_RCIN();
+#if AP_RSSI_ENABLED
         if (rssi.enabled()) {
             logger.Write_RSSI();
         }
+#endif
     }
     if (should_log(MASK_LOG_RCOUT)) {
         logger.Write_RCOUT();
@@ -208,7 +210,7 @@ void Blimp::one_hz_loop()
 #endif
 
     // update assigned functions and enable auxiliary servos
-    SRV_Channels::enable_aux_servos();
+    AP::srv().enable_aux_servos();
 
     AP_Notify::flags.flying = !ap.land_complete;
 
@@ -221,7 +223,7 @@ void Blimp::read_AHRS(void)
     ahrs.update(true);
 
     IGNORE_RETURN(ahrs.get_velocity_NED(vel_ned));
-    IGNORE_RETURN(ahrs.get_relative_position_NED_origin(pos_ned));
+    IGNORE_RETURN(ahrs.get_relative_position_NED_origin_float(pos_ned));
 
     vel_yaw = ahrs.get_yaw_rate_earth();
     Vector2f vel_xy_filtd = vel_xy_filter.apply({vel_ned.x, vel_ned.y});
@@ -242,7 +244,7 @@ void Blimp::read_AHRS(void)
                                 pos_ned.x,
                                 pos_ned.y,
                                 pos_ned.z,
-                                blimp.ahrs.get_yaw());
+                                blimp.ahrs.get_yaw_rad());
 #endif
 }
 

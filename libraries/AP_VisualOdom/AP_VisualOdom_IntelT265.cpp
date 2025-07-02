@@ -163,7 +163,7 @@ bool AP_VisualOdom_IntelT265::align_yaw_to_ahrs(const Vector3f &position, const 
         return false;
     }
 
-    align_yaw(position, attitude, AP::ahrs().get_yaw());
+    align_yaw(position, attitude, AP::ahrs().get_yaw_rad());
     return true;
 }
 
@@ -192,7 +192,7 @@ void AP_VisualOdom_IntelT265::align_yaw(const Vector3f &position, const Quaterni
     // trim yaw by difference between ahrs and sensor yaw
     const float yaw_trim_orig = _yaw_trim;
     _yaw_trim = wrap_2PI(yaw_rad - sens_yaw);
-    gcs().send_text(MAV_SEVERITY_INFO, "VisOdom: yaw shifted %d to %d deg",
+    GCS_SEND_TEXT(MAV_SEVERITY_INFO, "VisOdom: yaw shifted %d to %d deg",
                     (int)degrees(_yaw_trim - yaw_trim_orig),
                     (int)wrap_360(degrees(sens_yaw + _yaw_trim)));
 
@@ -224,7 +224,7 @@ bool AP_VisualOdom_IntelT265::align_position_to_ahrs(const Vector3f &sensor_pos,
 {
     // fail immediately if ahrs cannot provide position
     Vector3f ahrs_pos_ned;
-    if (!AP::ahrs().get_relative_position_NED_origin(ahrs_pos_ned)) {
+    if (!AP::ahrs().get_relative_position_NED_origin_float(ahrs_pos_ned)) {
         return false;
     }
 
@@ -349,7 +349,7 @@ void AP_VisualOdom_IntelT265::handle_voxl_camera_reset_jump(const Vector3f &sens
     }
 
     // warng user of reset
-    gcs().send_text(MAV_SEVERITY_WARNING, "VisOdom: reset");
+    GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "VisOdom: reset");
 
     // align sensor yaw to match current yaw estimate
     align_yaw_to_ahrs(sensor_pos, sensor_att);

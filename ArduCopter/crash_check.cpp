@@ -36,18 +36,18 @@ void Copter::crash_check()
     }
 
     // exit immediately if in force flying
-    if (force_flying && !flightmode->is_landing()) {
+    if (get_force_flying() && !flightmode->is_landing()) {
         crash_counter = 0;
         return;
     }
 
     // return immediately if we are not in an angle stabilize flight mode or we are flipping
-    if (flightmode->mode_number() == Mode::Number::ACRO || flightmode->mode_number() == Mode::Number::FLIP) {
+    if (!flightmode->crash_check_enabled()) {
         crash_counter = 0;
         return;
     }
 
-#if MODE_AUTOROTATE_ENABLED == ENABLED
+#if MODE_AUTOROTATE_ENABLED
     //return immediately if in autorotation mode
     if (flightmode->mode_number() == Mode::Number::AUTOROTATE) {
         crash_counter = 0;
@@ -143,7 +143,9 @@ void Copter::thrust_loss_check()
     }
 
     // check for descent
-    if (!is_negative(inertial_nav.get_velocity_z_up_cms())) {
+    float vel_d_ms = 0;
+    if (!AP::ahrs().get_velocity_D(vel_d_ms, vibration_check.high_vibes) || !is_positive(vel_d_ms)) {
+        // we have no vertical velocity estimate and/or we are not descending
         thrust_loss_counter = 0;
         return;
     }
@@ -229,7 +231,7 @@ void Copter::yaw_imbalance_check()
     }
 }
 
-#if PARACHUTE == ENABLED
+#if HAL_PARACHUTE_ENABLED
 
 // Code to detect a crash main ArduCopter code
 #define PARACHUTE_CHECK_TRIGGER_SEC         1       // 1 second of loss of control triggers the parachute
@@ -252,7 +254,9 @@ void Copter::parachute_check()
     parachute.set_is_flying(!ap.land_complete);
 
     // pass sink rate to parachute library
-    parachute.set_sink_rate(-inertial_nav.get_velocity_z_up_cms() * 0.01f);
+    float vel_d_ms = 0;
+    UNUSED_RESULT(AP::ahrs().get_velocity_D(vel_d_ms, vibration_check.high_vibes));
+    parachute.set_sink_rate(vel_d_ms);
 
     // exit immediately if in standby
     if (standby_active) {
@@ -273,7 +277,7 @@ void Copter::parachute_check()
     }
 
     // return immediately if we are not in an angle stabilize flight mode or we are flipping
-    if (flightmode->mode_number() == Mode::Number::ACRO || flightmode->mode_number() == Mode::Number::FLIP) {
+    if (!flightmode->crash_check_enabled()) {
         control_loss_count = 0;
         return;
     }
@@ -369,4 +373,4 @@ void Copter::parachute_manual_release()
     parachute_release();
 }
 
-#endif // PARACHUTE == ENABLED
+#endif  // HAL_PARACHUTE_ENABLED

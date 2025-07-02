@@ -7,6 +7,7 @@
 #include <AP_Scheduler/AP_Scheduler.h>
 #include <AP_Vehicle/AP_Vehicle_Type.h>
 #include "AP_Logger.h"
+#include <AP_RCProtocol/AP_RCProtocol.h>
 
 #if HAL_LOGGER_FENCE_ENABLED
     #include <AC_Fence/AC_Fence.h>
@@ -109,7 +110,12 @@ void LoggerMessageWriter_DFLogStart::process()
     case Stage::FORMATS:
         // write log formats so the log is self-describing
         while (next_format_to_send < _logger_backend->num_types()) {
-            if (!_logger_backend->Write_Format(_logger_backend->structure(next_format_to_send))) {
+            const auto &s { _logger_backend->structure(next_format_to_send) };
+            if (_logger_backend->have_emitted_format_for_type((LogMessages)s->msg_type)) {
+                next_format_to_send++;
+                continue;
+            }
+            if (!_logger_backend->Write_Format(s)) {
                 return; // call me again!
             }
             next_format_to_send++;
@@ -331,7 +337,15 @@ void LoggerMessageWriter_WriteSysInfo::process() {
         FALLTHROUGH;
 
     case Stage::RC_PROTOCOL: {
+#if CONFIG_HAL_BOARD != HAL_BOARD_LINUX
+#if AP_RCPROTOCOL_ENABLED
+        const char *prot = AP::RC().detected_protocol_name();
+#else
+        const char *prot = nullptr;
+#endif
+#else  // this is not hal-chibios
         const char *prot = hal.rcin->protocol();
+#endif
         if (prot == nullptr) {
             prot = "None";
         }
@@ -432,7 +446,7 @@ void LoggerMessageWriter_WriteEntireMission::process() {
             // upon failure to write the mission we will re-read from
             // storage; this could be improved.
             if (_mission->read_cmd_from_storage(_mission_number_to_send,cmd)) {
-                if (!_logger_backend->Write_Mission_Cmd(*_mission, cmd)) {
+                if (!_logger_backend->Write_Mission_Cmd(*_mission, cmd, LOG_CMD_MSG)) {
                     return; // call me again
                 }
             }
