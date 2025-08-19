@@ -21,7 +21,7 @@ bool ModeAuto::init(bool ignore_checks) {
     }
 
     // initialise waypoint controller
-    sub.wp_nav.wp_and_spline_init_cm();
+    sub.wp_nav.wp_and_spline_init_m();
 
     // clear guided limits
     guided_limit_clear();
@@ -113,7 +113,7 @@ void ModeAuto::auto_wp_run()
         motors.set_desired_spool_state(AP_Motors::DesiredSpoolState::GROUND_IDLE);
         attitude_control->set_throttle_out(0,true,g.throttle_filt);
         attitude_control->relax_attitude_controllers();
-        sub.wp_nav.wp_and_spline_init_cm();                                                // Reset xy target
+        sub.wp_nav.wp_and_spline_init_m();                                                // Reset xy target
         return;
     }
 
@@ -199,7 +199,7 @@ void ModeAuto::auto_circle_movetoedge_start(const Location &circle_center, float
         Location circle_edge(circle_edge_neu, Location::AltFrame::ABOVE_ORIGIN);
 
         // convert altitude to same as command
-        circle_edge.set_alt_cm(circle_center.alt, circle_center.get_alt_frame());
+        circle_edge.copy_alt_from(circle_center);
 
         // initialise wpnav to move to edge of circle
         if (!sub.wp_nav.set_wp_destination_loc(circle_edge)) {
@@ -208,7 +208,7 @@ void ModeAuto::auto_circle_movetoedge_start(const Location &circle_center, float
         }
 
         // if we are outside the circle, point at the edge, otherwise hold yaw
-        float dist_to_center = get_horizontal_distance_cm(inertial_nav.get_position_xy_cm().topostype(), sub.circle_nav.get_center_NEU_cm().xy());
+        float dist_to_center = get_horizontal_distance(inertial_nav.get_position_xy_cm().topostype(), sub.circle_nav.get_center_NEU_cm().xy());
         if (dist_to_center > sub.circle_nav.get_radius_cm() && dist_to_center > 500) {
             set_auto_yaw_mode(get_default_auto_yaw_mode(false));
         } else {
@@ -305,7 +305,7 @@ void ModeAuto::auto_loiter_run()
         attitude_control->set_throttle_out(0,true,g.throttle_filt);
         attitude_control->relax_attitude_controllers();
 
-        sub.wp_nav.wp_and_spline_init_cm();                                                // Reset xy target
+        sub.wp_nav.wp_and_spline_init_m();                                                // Reset xy target
         return;
     }
 
@@ -390,7 +390,7 @@ void ModeAuto::set_yaw_rate(float turn_rate_dps)
 void ModeAuto::set_auto_yaw_roi(const Location &roi_location)
 {
     // if location is zero lat, lon and altitude turn off ROI
-    if (roi_location.alt == 0 && roi_location.lat == 0 && roi_location.lng == 0) {
+    if (!roi_location.initialised()) {
         // set auto yaw mode back to default assuming the active command is a waypoint command.  A more sophisticated method is required to ensure we return to the proper yaw control for the active command
         set_auto_yaw_mode(get_default_auto_yaw_mode(false));
 #if HAL_MOUNT_ENABLED
@@ -459,7 +459,7 @@ bool ModeAuto::auto_terrain_recover_start()
 
     // initialize vertical maximum speeds and acceleration
     position_control->set_max_speed_accel_U_cm(sub.wp_nav.get_default_speed_down_cms(), sub.wp_nav.get_default_speed_up_cms(), sub.wp_nav.get_accel_U_cmss());
-    position_control->set_correction_speed_accel_U_cmss(sub.wp_nav.get_default_speed_down_cms(), sub.wp_nav.get_default_speed_up_cms(), sub.wp_nav.get_accel_U_cmss());
+    position_control->set_correction_speed_accel_U_cm(sub.wp_nav.get_default_speed_down_cms(), sub.wp_nav.get_default_speed_up_cms(), sub.wp_nav.get_accel_U_cmss());
 
     gcs().send_text(MAV_SEVERITY_WARNING, "Attempting auto failsafe recovery");
     return true;

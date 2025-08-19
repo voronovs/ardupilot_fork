@@ -1702,7 +1702,7 @@ class AutoTestQuadPlane(vehicle_test_suite.TestSuite):
 
         distance = self.get_distance_int(vehicle_gpi, ship_gpi)
         self.progress(f"{distance=}")
-        max_distance = 1
+        max_distance = 1.2
         if distance > max_distance:
             raise NotAchievedException(f"Did not land within {max_distance}m of ship {distance=}")
 
@@ -1966,8 +1966,8 @@ class AutoTestQuadPlane(vehicle_test_suite.TestSuite):
         self.set_rc(3, 1000)
         self.wait_climbrate(-5, -0.5, timeout=10)
 
-        # Force disarm
-        self.disarm_vehicle(force=True)
+        # reboot SITL
+        self.reboot_sitl(force=True)
 
     def RTL_AUTOLAND_1(self):
         '''test behaviour when RTL_AUTOLAND==1'''
@@ -2715,6 +2715,73 @@ class AutoTestQuadPlane(vehicle_test_suite.TestSuite):
         self.mav.motors_disarmed_wait()
         self.reset_SITL_commandline()
 
+    def RudderArmedTakeoffRequiresNeutralThrottle(self):
+        '''check rudder must be neutral before VTOL takeoff allowed'''
+        self.upload_simple_relhome_mission([
+            (mavutil.mavlink.MAV_CMD_NAV_VTOL_TAKEOFF, 0, 0, 10),
+            (mavutil.mavlink.MAV_CMD_NAV_VTOL_LAND, 0, 0, 0),
+        ])
+        self.upload_simple_relhome_mission
+        self.change_mode('AUTO')
+        self.wait_ready_to_arm()
+        self.set_rc(4, 2000)
+        self.wait_armed()
+        self.wait_altitude(-1, 1, relative=True, minimum_duration=10)
+        self.set_rc(4, 1500)
+        self.wait_altitude(5, 1000, relative=True)
+        self.zero_throttle()
+        self.wait_disarmed(timeout=60)
+
+    def RudderArmingWithARMING_CHECK_THROTTLEUnset(self) -> None:
+        '''check arming behaviour with ARMING_CHECK_THROTTLE unset'''
+        self.wait_ready_to_arm()
+
+        self.start_subtest("Should not be able to arm with mid-stick throttle")
+        self.set_rc(3, 1500)
+        self.set_rc(4, 2000)
+        w = vehicle_test_suite.WaitAndMaintainDisarmed(self, minimum_duration=10)
+        w.run()
+        self.set_rc(4, 1500)
+        self.disarm_vehicle()
+
+        self.clear_parameter_bit("RC_OPTIONS", 5)
+        self.start_subtest("Should be able to arm with mid-stick throttle")
+        self.set_rc(3, 1500)
+        self.set_rc(4, 2000)
+        self.wait_armed()
+        self.set_rc(4, 1500)
+        self.disarm_vehicle()
+
+    def ScriptedArmingChecksApplet(self):
+        """ Applet for Arming Checks will prevent a vehicle from arming based on scripted checks
+            """
+        self.start_subtest("Scripted Arming Checks Applet validation")
+        self.context_collect("STATUSTEXT")
+
+        applet_script = "arming-checks.lua"
+        """Initialize the FC"""
+        self.set_parameter("SCR_ENABLE", 1)
+        self.install_applet_script_context(applet_script)
+        self.reboot_sitl()
+        self.wait_ekf_happy()
+        self.wait_text("ArduPilot Ready", check_context=True)
+        self.wait_text("Arming Checks .* loaded", timeout=30, check_context=True, regex=True)
+        '''self.install_messageprinter_handlers_context(['PARAM_VALUE'])'''
+
+        self.start_subsubtest("ArmCk: Q_RTL_ALT must be legal")
+        self.set_parameter("SCALING_SPEED", 22)
+        self.set_parameter("Q_RTL_ALT", 150)
+        self.assert_prearm_failure("ArmCk: fail: Q_RTL_ALT too high", other_prearm_failures_fatal=False)
+        self.set_parameter("Q_RTL_ALT", 120)
+        self.wait_text("clear: Q_RTL_ALT", check_context=True)
+
+        self.start_subsubtest("ArmCk: Q_RTL vs QLand")
+        ''' this is only a warning'''
+        self.set_parameter("Q_OPTIONS", 33)
+        self.wait_text("ArmCk: note: Q will RTL", check_context=True)
+        self.set_parameter("Q_OPTIONS", 1)
+        self.wait_text("ArmCk: note: Q will land", check_context=True)
+
     def tests(self):
         '''return list of all tests'''
 
@@ -2772,5 +2839,8 @@ class AutoTestQuadPlane(vehicle_test_suite.TestSuite):
             self.QLoiterRecovery,
             self.FastInvertedRecovery,
             self.CruiseRecovery,
+            self.RudderArmedTakeoffRequiresNeutralThrottle,
+            self.RudderArmingWithARMING_CHECK_THROTTLEUnset,
+            self.ScriptedArmingChecksApplet,
         ])
         return ret

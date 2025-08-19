@@ -2907,6 +2907,11 @@ gcs = {}
 ---@param value number -- value to send
 function gcs:send_named_float(name, value) end
 
+-- send named string value using NAMED_VALUE_STRING message
+---@param name string -- up to 10 chars long
+---@param value string -- value to send, up to 64 chars long
+function gcs:send_named_string(name, value) end
+
 -- set message interval for a given serial port and message id
 ---@param port_num integer -- serial port number
 ---@param msg_id uint32_t_ud|integer|number -- MAVLink message id
@@ -4002,6 +4007,13 @@ function fence:get_margin_breaches() end
 ---@return number -- distance
 function fence:get_breach_distance(fence_type) end
 
+-- Rally library
+rally = {}
+-- Returns a specfic rally by index as a Location 
+---@param index integer -- 0 indexed
+---@return Location_ud|nil
+function rally:get_rally_location(index) end
+
 -- desc
 ---@class (exact) stat_t_ud
 local stat_t_ud = {}
@@ -4097,6 +4109,14 @@ function networking:get_netmask_active() end
 -- desc
 ---@return uint32_t_ud
 function networking:get_ip_active() end
+
+-- add a custom ipv4 route
+---@param backend_idx integer -- backend index
+---@param iface_idx integer -- interface index
+---@param dest_ip uint32_t_ud|integer|number -- desttination IP address
+---@param mask_len integer -- network mask bit length
+---@return boolean
+function networking:add_route(backend_idx, iface_idx, dest_ip, mask_len) end
 
 -- visual odometry object
 visual_odom = {}
