@@ -168,3 +168,6 @@ venv.bak/
 autotest_result_*_junit.xml
 myenv/
 Tools/bootloaders/
+Tools/bootloaders/CubeOrangePlus_bl.bin
+Tools/bootloaders/CubeOrangePlus_bl.elf
+Tools/bootloaders/CubeOrangePlus_bl.hex
