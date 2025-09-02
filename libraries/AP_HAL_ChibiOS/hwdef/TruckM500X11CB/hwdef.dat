@@ -1,0 +1,2 @@
+include ../CubeBlack/hwdef.dat
+define AP_CUSTOM_FIRMWARE_STRING "TruckM500X11CB_v4.5.7.1"
