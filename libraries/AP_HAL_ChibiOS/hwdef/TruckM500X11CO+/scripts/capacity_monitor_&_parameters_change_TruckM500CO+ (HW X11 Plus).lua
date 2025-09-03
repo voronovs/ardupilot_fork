@@ -9,8 +9,9 @@ local state_with_payload = true
 local state_empty = false
 local change_params_flag = false
 local update_user = false -- flag of update messages to GCS
+local brd_serial_number = param:get("BRD_SERIAL_NUM")
 
-gcs:send_text(7, string.format("Serial number - 1"))
+gcs:send_text(7, string.format("Serial number - %d", brd_serial_number))
 gcs:send_text(7, string.format("FW version - TruckM500_X11_CubeOrange+_v4.5.7.1"))
 gcs:send_text(7, string.format("ARS version - NONE"))
 gcs:send_text(7, string.format("Parameters version - 20250820"))
