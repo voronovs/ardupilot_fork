@@ -1,0 +1,2 @@
+include ../MatekH743/hwdef.dat
+define AP_CUSTOM_FIRMWARE_STRING "Bumblebee_MatekH743_v4.5.7.1"
