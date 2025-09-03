@@ -7,7 +7,7 @@ local batt_capacity = battery:pack_capacity_mah(0) -- battcapacity 12S1P from pa
 local update_user = false -- flag of update messages to GCS
 
 gcs:send_text(7, string.format("Serial number - 1"))
-gcs:send_text(7, string.format("FW version - Bumblebee_v4.5.7.1"))
+gcs:send_text(7, string.format("FW version - Bumblebee_MatekH743_v4.5.7.1"))
 gcs:send_text(7, string.format("ARS version - NONE"))
 gcs:send_text(7, string.format("Parameters version - 20250903"))
 gcs:send_text(7, string.format("Script version - 20250903"))
