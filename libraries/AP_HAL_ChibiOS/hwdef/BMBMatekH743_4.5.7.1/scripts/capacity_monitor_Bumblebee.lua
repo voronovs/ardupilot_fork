@@ -5,9 +5,10 @@ local voltage = 0           -- voltage from 12S1P, V
 local capacity_used = 0     -- consumed capacity, mAh
 local batt_capacity = battery:pack_capacity_mah(0) -- battcapacity 12S1P from parameters, mAh
 local update_user = false -- flag of update messages to GCS
+local brd_serial_number = param:get("BRD_SERIAL_NUM")
 
-gcs:send_text(7, string.format("Serial number - 1"))
-gcs:send_text(7, string.format("FW version - Bumblebee_MatekH743_v4.5.7.1"))
+gcs:send_text(7, string.format("Serial number - FLUAVBMBМ%d", brd_serial_number))
+gcs:send_text(7, string.format("FW version - BMBMatekH743_4.5.7.1"))
 gcs:send_text(7, string.format("ARS version - NONE"))
 gcs:send_text(7, string.format("Parameters version - 20250903"))
 gcs:send_text(7, string.format("Script version - 20250903"))
