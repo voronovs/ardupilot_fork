@@ -14,8 +14,8 @@ local brd_serial_number = param:get("BRD_SERIAL_NUM")
 gcs:send_text(7, string.format("Serial number - %d", brd_serial_number))
 gcs:send_text(7, string.format("FW version - TruckM500_X11_CubeOrange+_v4.5.7.1"))
 gcs:send_text(7, string.format("ARS version - NONE"))
-gcs:send_text(7, string.format("Parameters version - 20250820"))
-gcs:send_text(7, string.format("Script version - 20250820"))
+gcs:send_text(7, string.format("Parameters version - 20250903"))
+gcs:send_text(7, string.format("Script version - 20250903"))
 
 function updateParameters ()
     if state_with_payload and change_params_flag then
