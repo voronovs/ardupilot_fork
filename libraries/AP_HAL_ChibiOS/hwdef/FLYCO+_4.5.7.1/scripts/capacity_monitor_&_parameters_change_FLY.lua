@@ -14,7 +14,7 @@ local brd_serial_number = param:get("BRD_SERIAL_NUM")
 gcs:send_text(7, string.format("Serial number - FLUAVFLYМ%d", brd_serial_number))
 gcs:send_text(7, string.format("FW version - FLYCO+_4.5.7.1"))
 gcs:send_text(7, string.format("ARS version - NONE"))
-gcs:send_text(7, string.format("Parameters version - 20250903"))
+gcs:send_text(7, string.format("Parameters version - 20250904"))
 gcs:send_text(7, string.format("Script version - 20250903"))
 
 function updateParameters ()
