@@ -13,10 +13,10 @@ local brd_serial_number = param:get("BRD_SERIAL_NUM")
 
 
 gcs:send_text(7, string.format("Serial number - FLUAVANT24YYYYMMМ%d", brd_serial_number)) -- вставить серийный номер
-gcs:send_text(7, string.format("FW version - ANT24X8CO+_4.5.7.1")) -- вставить название полетного контроллера
+gcs:send_text(7, string.format("FW version - ANT24X8CO+_4.5.7.2")) -- вставить название полетного контроллера
 gcs:send_text(7, string.format("ARS version - NONE"))
-gcs:send_text(7, string.format("Parameters version - 20250905"))
-gcs:send_text(7, string.format("Script version - 20250905"))
+gcs:send_text(7, string.format("Parameters version - 20250910"))
+gcs:send_text(7, string.format("Script version - 20250910"))
 
 function updateParameters ()
     if state_with_payload and change_params_flag then
