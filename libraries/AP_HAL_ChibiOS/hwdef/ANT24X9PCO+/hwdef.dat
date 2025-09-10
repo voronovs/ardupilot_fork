@@ -1,0 +1,2 @@
+include ../CubeOrangePlus/hwdef.dat
+define AP_CUSTOM_FIRMWARE_STRING "ANT24X9PCO+_4.5.7.2"
