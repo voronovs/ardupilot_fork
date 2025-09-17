@@ -18,7 +18,7 @@ gcs:send_text(7, string.format("Serial number - FLUAVANT24YYYYMMМ%d", brd_seria
 gcs:send_text(7, string.format("FW version - ANT24X8deliveryCO+_4.5.7.3")) -- вставить название полетного контроллера
 gcs:send_text(7, string.format("ARS version - NONE"))
 gcs:send_text(7, string.format("Parameters version - 20250910"))
-gcs:send_text(7, string.format("Script version - 20250910"))
+gcs:send_text(7, string.format("Script version - 20250917"))
 
 function updateParameters ()
     if state_with_payload and change_params_flag then
