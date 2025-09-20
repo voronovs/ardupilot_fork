@@ -15,10 +15,10 @@ local sample_count = 0
 local avg_watts = 0 -- average power consumption
 
 gcs:send_text(7, string.format("Serial number - FLUAVTRМ500202509М%d", brd_serial_number)) -- вставить серийный номер
-gcs:send_text(7, string.format("FW version - TRM500X11CO+_4.5.7.4")) -- вставить название полетного контроллера
+gcs:send_text(7, string.format("FW version - TRM500X11CO+_4.5.7.5")) -- вставить название полетного контроллера
 gcs:send_text(7, string.format("ARS version - NONE"))
 gcs:send_text(7, string.format("Parameters version - 20250919"))
-gcs:send_text(7, string.format("Script version - 20250919"))
+gcs:send_text(7, string.format("Script version - 20250920"))
 
 function updateParameters ()
     if state_with_payload and change_params_flag then
@@ -62,7 +62,7 @@ function updateBatteryInfo()
     watts = current*voltage -- watts from 12S1P, W
     capacity_used = battery:consumed_mah(0)   -- consumed capacity, mAh
 
-    if current ~= nil and  voltage ~= nil then
+    if current ~= nil and voltage ~= nil then
         watts_sum = watts_sum + watts
         sample_count = sample_count + 1
     end
@@ -77,18 +77,20 @@ function updateBatteryInfo()
             gcs:send_text(7, string.format("batt_used: %d / %d mAh", math.floor(capacity_used), math.floor(batt_capacity)))
         end
 
-        avg_watts = watts_sum / sample_count
+        if sample_count > 0 then
+            avg_watts = watts_sum / sample_count
 
-        if math.floor(avg_watts) > 3100 and state_empty then
-            change_params_flag = true
-            state_with_payload = true
-            state_empty = false
-            updateParameters()
-        elseif math.floor(avg_watts) <= 3100 and state_with_payload then
-            change_params_flag = true
-            state_with_payload = false
-            state_empty = true
-            updateParameters()
+            if math.floor(avg_watts) > 3100 and state_empty then
+                change_params_flag = true
+                state_with_payload = true
+                state_empty = false
+                updateParameters()
+            elseif math.floor(avg_watts) <= 3100 and state_with_payload then
+                change_params_flag = true
+                state_with_payload = false
+                state_empty = true
+                updateParameters()
+            end
         end
 
         -- Сброс накопителей

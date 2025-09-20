@@ -1,2 +1,2 @@
 include ../CubeBlack/hwdef.dat
-define AP_CUSTOM_FIRMWARE_STRING "TRM500X11CB_4.5.7.4"
+define AP_CUSTOM_FIRMWARE_STRING "TRM500X11CB_4.5.7.5"
