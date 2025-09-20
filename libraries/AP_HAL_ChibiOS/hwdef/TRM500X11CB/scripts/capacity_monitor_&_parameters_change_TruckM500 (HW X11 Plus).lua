@@ -17,7 +17,7 @@ local avg_watts = 0 -- average power consumption
 gcs:send_text(7, string.format("Serial number - FLUAVTRМ500202509М%d", brd_serial_number)) -- вставить серийный номер
 gcs:send_text(7, string.format("FW version - TRM500X11CB_4.5.7.5")) -- вставить название полетного контроллера
 gcs:send_text(7, string.format("ARS version - NONE"))
-gcs:send_text(7, string.format("Parameters version - 20250919"))
+gcs:send_text(7, string.format("Parameters version - 20250920"))
 gcs:send_text(7, string.format("Script version - 20250920"))
 
 function updateParameters ()
