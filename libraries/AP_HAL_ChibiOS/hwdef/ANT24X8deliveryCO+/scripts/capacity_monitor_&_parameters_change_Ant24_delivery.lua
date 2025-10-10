@@ -14,11 +14,18 @@ local watts_sum = 0
 local sample_count = 0
 local avg_watts = 0 -- средняя мощность
 
-gcs:send_text(7, string.format("Serial number - FLUAVANT24YYYYMMМ%d", brd_serial_number)) -- вставить серийный номер
-gcs:send_text(7, string.format("FW version - ANT24X8deliveryCO+_4.5.7.3")) -- вставить название полетного контроллера
+gcs:send_text(7, string.format("Serial number - FLUAVANT24202509М%d", brd_serial_number)) -- вставить серийный номер
+gcs:send_text(7, string.format("FW version - ANT24X8deliveryCO+_4.5.7.4")) -- вставить название полетного контроллера
 gcs:send_text(7, string.format("ARS version - NONE"))
-gcs:send_text(7, string.format("Parameters version - 20250910"))
-gcs:send_text(7, string.format("Script version - 20250917"))
+gcs:send_text(7, string.format("Parameters version - 20250929"))
+gcs:send_text(7, string.format("Script version - 20250929"))
+
+notify:play_tune(
+        'MFT100' ..
+        'O3L4F#F#F#L8D.L16A' ..
+        'L4F#L8D.L16AL2F#' ..
+        'O4L4C#C#C#L8D.O3L16A' ..
+        'L4FL8D.L16AL2F#')
 
 function updateParameters ()
     if state_with_payload and change_params_flag then
@@ -69,20 +76,21 @@ function updateBatteryInfo()
             gcs:send_text(7, string.format("batt_used: %d / %d mAh", math.floor(capacity_used), math.floor(batt_capacity)))
         end
 
-        avg_watts = watts_sum / sample_count
+        if sample_count > 0 then
+            avg_watts = watts_sum / sample_count
 
-        if math.floor(avg_watts) > 3000 and state_empty then
-            change_params_flag = true
-            state_with_payload = true
-            state_empty = false
-            updateParameters()
-        elseif math.floor(avg_watts) <= 3000 and state_with_payload then
-            change_params_flag = true
-            state_with_payload = false
-            state_empty = true
-            updateParameters()
+            if math.floor(avg_watts) > 3000 and state_empty then
+                change_params_flag = true
+                state_with_payload = true
+                state_empty = false
+                updateParameters()
+            elseif math.floor(avg_watts) <= 3000 and state_with_payload then
+                change_params_flag = true
+                state_with_payload = false
+                state_empty = true
+                updateParameters()
+            end
         end
-
         -- Сброс накопителей
         watts_sum = 0
         sample_count = 0
@@ -92,6 +100,7 @@ end
 -- main
 function update ()
     local now_ms = millis() -- get the time since boot
+    update_user = false
 
     if (now_ms - last_print_ms > 5000) then -- update every 5s, ms
         last_print_ms = now_ms
