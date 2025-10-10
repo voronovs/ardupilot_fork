@@ -1,0 +1,156 @@
+-- === Настройки ===
+local BUTTON_ID = 1          -- кнопка BTN_PIN1 на AUX4
+local HOLD_TIME = 3000       -- удержание 3 сек
+local TIMER_DURATION = 15000 -- длительность таймера 15 сек
+local AUTO_DELAY = 3000      -- задержка 3 сек после ARM
+local RELAY_NUM = 0
+local RELAY_NUM4 = 4
+local RELAY_NUM5 = 5
+
+-- === Переменные ===
+local pressed_time = 0
+local state_guided = false
+local timer_active = false
+local start_time = 0
+local last_beep = 0
+local elapsed_seconds = 0
+local arm_time = 0
+local awaiting_auto = false
+local gps_bad = false               -- true if GPS is failing checks
+local led_state = false             -- текущее состояние LED
+
+gcs:send_text(7, string.format("Script Ant24_delivery_button_buzzer_LED.lua - 20250926"))
+
+-- === Функция писка ===
+local function beep(short)
+    if short then
+        notify:play_tune("MFT200L8a")   -- короткий сигнал
+    else
+        notify:play_tune("MFT800L4a")   -- длинный сигнал
+    end
+end
+
+-- === Проверки условий ===
+local function conditions_ok()
+    if arming:is_armed() then
+        gcs:send_text(0, "UAV already Armed")
+        return false
+    end
+    if vehicle:get_mode() ~= 4 then -- 4 = GUIDED
+        gcs:send_text(0, "Not in GUIDED mode")
+        return false
+    end
+    local gps_speed_acc = gps:speed_accuracy(gps:primary_sensor())
+    if gps_speed_acc == nil then gps_speed_acc = 99 end
+    local gps_speed_acc_bad = (gps_speed_acc > 0.8)
+    local gps_num_sat = gps:num_sats(gps:primary_sensor())
+    local gps_num_sat_bad = ((gps_num_sat == nil) or (gps:num_sats(gps:primary_sensor()) < 6))
+    if gps_bad then
+        if (not gps_speed_acc_bad and not gps_num_sat_bad) then gps_bad = false end
+    else
+        if (gps_speed_acc_bad or gps_num_sat_bad) then gps_bad = true end
+    end
+    if gps_bad then
+        gcs:send_text(0, "No good GNSS fix")
+        return false
+    end
+    if not rc:has_valid_input() then
+        gcs:send_text(0, "No RC input")
+        return false
+    end
+    return true
+end
+
+-- === Армирование ===
+local function try_arm()
+    if not arming:is_armed() then
+        gcs:send_text(0, "Arming drone...")
+        arming:arm()
+        arm_time = millis()
+        awaiting_auto = true
+    else
+        gcs:send_text(0, "Already armed")
+    end
+end
+
+-- === Основной цикл ===
+function update()
+    local now = millis()
+    local btn = not button:get_button_state(BUTTON_ID)
+
+    -- Удержание кнопки работает только если дрон disarm
+    if not arming:is_armed() then
+        if btn then
+            if pressed_time == 0 then
+                pressed_time = now
+            elseif (now - pressed_time >= HOLD_TIME) then
+                gcs:send_text(0, "Button held 3s: switching to GUIDED")
+                if vehicle:set_mode(4) then -- 4 = GUIDED
+                    state_guided = true
+                else
+                    gcs:send_text(0, "Failed to switch to GUIDED")
+                end
+            end
+        else
+            pressed_time = 0
+        end
+    end
+
+    -- Если перешли в GUIDED и все условия выполнены → старт таймера
+    if state_guided and not timer_active then
+        if conditions_ok() then
+            gcs:send_text(0, "Conditions OK, starting timer 15s")
+            timer_active = true
+            start_time = now
+            last_beep = now
+            elapsed_seconds = 0
+            beep(true)
+            -- Включаем LED на первую секунду
+            led_state = true
+            relay:on(RELAY_NUM)
+            relay:on(RELAY_NUM4)
+            relay:on(RELAY_NUM5)
+        else
+            state_guided = false -- сброс, если условия не прошли
+        end
+    end
+
+    -- Логика таймера с миганием LED
+    if timer_active then
+        if now - last_beep >= 1000 then
+            elapsed_seconds = elapsed_seconds + 1
+            last_beep = now
+
+            if elapsed_seconds <= (TIMER_DURATION // 1000) then
+                beep(true)
+                -- Переключаем состояние LED (мигание)
+                led_state = not led_state
+                relay:toggle(RELAY_NUM)
+                relay:toggle(RELAY_NUM4)
+                relay:toggle(RELAY_NUM5)
+            else
+                timer_active = false
+                gcs:send_text(0, "Timer finished, arming!")
+                beep(false)
+                relay:off(RELAY_NUM) -- выключаем LED
+                relay:off(RELAY_NUM4) -- выключаем LED
+                relay:off(RELAY_NUM5) -- выключаем LED
+                try_arm()
+                state_guided = false -- не повторять попытку арма
+            end
+        end
+    end
+
+    -- После ARM ждём 3 сек и включаем AUTO
+    if awaiting_auto and arming:is_armed() then
+        if now - arm_time >= AUTO_DELAY then
+            gcs:send_text(0, "Switching to AUTO")
+            vehicle:set_mode(3) -- 3 = AUTO
+            awaiting_auto = false
+        end
+    end
+
+    return update, 100
+end
+
+return update, 100
