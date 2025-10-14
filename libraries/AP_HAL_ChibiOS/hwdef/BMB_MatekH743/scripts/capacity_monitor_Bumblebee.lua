@@ -36,7 +36,7 @@ end
 -- main
 function update ()
     local now_ms = millis() -- get the time since boot
-    local update_user = false
+    update_user = false
 
     if (now_ms - last_print_ms > 5000) then -- update every 5s, ms
         last_print_ms = now_ms
