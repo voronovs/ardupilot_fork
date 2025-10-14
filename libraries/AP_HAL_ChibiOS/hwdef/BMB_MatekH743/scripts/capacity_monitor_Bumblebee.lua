@@ -9,7 +9,7 @@ gcs:send_text(7, string.format("Serial number - FLUAVBLB202510М%d", brd_serial_
 gcs:send_text(7, string.format("FW version - BMB_MatekH743_4.6.2.1")) -- вставить название полетного контроллера
 gcs:send_text(7, string.format("ARS version - NONE"))
 gcs:send_text(7, string.format("Parameters version - 20251014"))
-gcs:send_text(7, string.format("Script version - 20251010"))
+gcs:send_text(7, string.format("Script version - 20251014"))
 
 notify:play_tune(
         'MFT100' ..
