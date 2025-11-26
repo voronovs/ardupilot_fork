@@ -1,0 +1,2 @@
+include ../MatekH743/hwdef.dat
+define AP_CUSTOM_FIRMWARE_STRING "BMB_MatekH743_4.6.3.1"
