@@ -15,9 +15,9 @@ local sample_count = 0
 local avg_watts = 0 -- average power consumption
 
 gcs:send_text(7, string.format("Serial number - FLUAVFLY202505М%d", brd_serial_number))
-gcs:send_text(7, string.format("FW version - FLYCO_4.6.3.1"))
-gcs:send_text(7, string.format("Parameters version - 20251118"))
-gcs:send_text(7, string.format("Script version - 20251118"))
+gcs:send_text(7, string.format("FW version - FLYCO_4.6.3.2"))
+gcs:send_text(7, string.format("Parameters version - 20251205"))
+gcs:send_text(7, string.format("Script version - 20251205"))
 
 notify:play_tune(
         'MFT100' ..
@@ -30,15 +30,17 @@ function updateParameters ()
     if state_with_payload and change_params_flag then
         param:set_and_save("PSC_ACCZ_P", 0.37)
         param:set_and_save("PSC_ACCZ_I", 0.74)
+        param:set_and_save("INS_HNTCH_REF", 0.3)
         change_params_flag = false
         gcs:send_text(7, string.format("Payload params activated"))
     elseif state_empty and change_params_flag then
-        param:set_and_save("ATC_RAT_PIT_D", 0.0129809)
-        param:set_and_save("ATC_RAT_PIT_I", 0.247149)
-        param:set_and_save("ATC_RAT_PIT_P", 0.247149)
-        param:set_and_save("ATC_RAT_RLL_D", 0.0133511)
-        param:set_and_save("ATC_RAT_RLL_I", 0.2303827)
-        param:set_and_save("ATC_RAT_RLL_P", 0.2303827)
+        param:set_and_save("ATC_RAT_PIT_D", 0.00979057)
+        param:set_and_save("ATC_RAT_PIT_I", 0.2153274)
+        param:set_and_save("ATC_RAT_PIT_P", 0.2153274)
+        param:set_and_save("ATC_RAT_RLL_D", 0.009428053)
+        param:set_and_save("ATC_RAT_RLL_I", 0.179338)
+        param:set_and_save("ATC_RAT_RLL_P", 0.179338)
+        param:set_and_save("INS_HNTCH_REF", 0.2)
         param:set_and_save("PSC_ACCZ_P", 0.225)
         param:set_and_save("PSC_ACCZ_I", 0.45)
         change_params_flag = false

@@ -1,2 +1,2 @@
 include ../CubeOrange/hwdef.dat
-define AP_CUSTOM_FIRMWARE_STRING "FLYCO_4.6.3.1"
+define AP_CUSTOM_FIRMWARE_STRING "FLYCO_4.6.3.2"
