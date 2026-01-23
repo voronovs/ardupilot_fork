@@ -1,0 +1,2 @@
+include ../Pixhawk6X/hwdef.dat
+define AP_CUSTOM_FIRMWARE_STRING "ANT24X9PV6X_v4.6.3.1"
