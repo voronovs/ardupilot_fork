@@ -15,9 +15,9 @@ local sample_count = 0
 local avg_watts = 0 -- average power consumption
 
 gcs:send_text(7, string.format("Serial number - FLUAVANT24202510M%d", brd_serial_number)) -- вставить серийный номер
-gcs:send_text(7, string.format("FW version - ANT24X9PV6X_4.6.3.1")) -- вставить название полетного контроллера
-gcs:send_text(7, string.format("Parameters version - 20260121"))
-gcs:send_text(7, string.format("Script version - 20260121"))
+gcs:send_text(7, string.format("FW version - ANT24X9PV6X_4.6.3.2")) -- вставить название полетного контроллера
+gcs:send_text(7, string.format("Parameters version - 20260128"))
+gcs:send_text(7, string.format("Script version - 20260128"))
 
 notify:play_tune(
         'MFT100' ..
@@ -28,27 +28,31 @@ notify:play_tune(
 
 function updateParameters ()
     if state_with_payload and change_params_flag then
-        param:set_and_save("ATC_RAT_PIT_D", 0.006749)
-        param:set_and_save("ATC_RAT_PIT_I", 0.1689983)
-        param:set_and_save("ATC_RAT_PIT_P", 0.1689983)
-        param:set_and_save("ATC_RAT_RLL_D", 0.0087827)
-        param:set_and_save("ATC_RAT_RLL_I", 0.1907172)
-        param:set_and_save("ATC_RAT_RLL_P", 0.1907172)
+        param:set_and_save("ATC_RAT_PIT_D", 0.007324576)
+        param:set_and_save("ATC_RAT_PIT_I", 0.1661616)
+        param:set_and_save("ATC_RAT_PIT_P", 0.1661616)
+        param:set_and_save("ATC_RAT_RLL_D", 0.008355636)
+        param:set_and_save("ATC_RAT_RLL_I", 0.2016719)
+        param:set_and_save("ATC_RAT_RLL_P", 0.2016719)
+        param:set_and_save("ATC_RAT_YAW_I", 0.05)
+        param:set_and_save("ATC_RAT_YAW_P", 0.5)
         param:set_and_save("LAND_SPEED_HIGH", 60)
-        param:set_and_save("PSC_ACCZ_P", 0.23)
-        param:set_and_save("PSC_ACCZ_I", 0.46)
+        param:set_and_save("PSC_ACCZ_P", 0.21)
+        param:set_and_save("PSC_ACCZ_I", 0.42)
         change_params_flag = false
         gcs:send_text(7, string.format("Payload params activated"))
     elseif state_empty and change_params_flag then
-        param:set_and_save("ATC_RAT_PIT_D", 0.0084362)
-        param:set_and_save("ATC_RAT_PIT_I", 0.1906413)
-        param:set_and_save("ATC_RAT_PIT_P", 0.1906413)
-        param:set_and_save("ATC_RAT_RLL_D", 0.0059036)
-        param:set_and_save("ATC_RAT_RLL_I", 0.1794221)
-        param:set_and_save("ATC_RAT_RLL_P", 0.1794221)
+        param:set_and_save("ATC_RAT_PIT_D", 0.006362824)
+        param:set_and_save("ATC_RAT_PIT_I", 0.1817574)
+        param:set_and_save("ATC_RAT_PIT_P", 0.1817574)
+        param:set_and_save("ATC_RAT_RLL_D", 0.007527507)
+        param:set_and_save("ATC_RAT_RLL_I", 0.1839013)
+        param:set_and_save("ATC_RAT_RLL_P", 0.1839013)
+        param:set_and_save("ATC_RAT_YAW_I", 0.06)
+        param:set_and_save("ATC_RAT_YAW_P", 0.6)
         param:set_and_save("LAND_SPEED_HIGH", 0)
-        param:set_and_save("PSC_ACCZ_P", 0.14)
-        param:set_and_save("PSC_ACCZ_I", 0.28)
+        param:set_and_save("PSC_ACCZ_P", 0.13)
+        param:set_and_save("PSC_ACCZ_I", 0.26)
         change_params_flag = false
         gcs:send_text(7, string.format("Empty params activated"))
     end
