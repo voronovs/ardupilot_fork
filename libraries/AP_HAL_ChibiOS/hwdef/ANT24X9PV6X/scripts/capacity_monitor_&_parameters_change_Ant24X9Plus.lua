@@ -59,8 +59,8 @@ function updateParameters ()
 end
 
 function updateBatteryInfo()
-    current = battery:current_amps(0) * 2 -- current from 12S1P, A
-    voltage = battery:voltage(0) * 2 -- voltage from 12S1P, V
+    current = battery:current_amps(0) -- current from 12S1P, A
+    voltage = battery:voltage(0) -- voltage from 12S1P, V
     capacity_used = battery:consumed_mah(0)   -- consumed capacity on one battery 6S1P, mAh
 
     if current ~= nil and voltage ~= nil then
