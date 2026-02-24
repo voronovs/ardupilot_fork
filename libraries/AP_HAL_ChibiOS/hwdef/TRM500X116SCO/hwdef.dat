@@ -1,0 +1,2 @@
+include ../CubeOrange/hwdef.dat
+define AP_CUSTOM_FIRMWARE_STRING "TRM500X116SCO_4.6.3.1"
